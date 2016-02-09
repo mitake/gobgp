@@ -48,6 +48,8 @@ func main() {
 		CPUs          int    `long:"cpus" description:"specify the number of CPUs to be used"`
 		Ops           bool   `long:"openswitch" description:"openswitch mode"`
 		GrpcPort      int    `long:"grpc-port" description:"grpc port" default:"50051"`
+		EtcdEndpoints string `long:"etcd-endpoints" description:"URLs of etcd endpoints" default:""`
+		EtcdKey       string `long:"etcd-key" description:"key name of etcd" default:"gobgp.toml"`
 	}
 	_, err := flags.Parse(&opts)
 	if err != nil {
@@ -165,6 +167,11 @@ func main() {
 		go config.ReadConfigfileServe(opts.ConfigFile, opts.ConfigType, configCh, reloadCh)
 		reloadCh <- true
 	}
+
+	if opts.EtcdEndpoints != "" { // how to handle both of file and etcd endpoints are given?
+		go config.WatchEtcd(opts.EtcdEndpoints, opts.EtcdKey, configCh)
+	}
+
 	go bgpServer.Serve()
 
 	// start grpc Server
